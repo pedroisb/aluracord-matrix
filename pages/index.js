@@ -1,51 +1,18 @@
 import appConfig from '../config.json';
 import { Box, Button, Text, TextField, Image } from '@skynexui/components';
-
-function GlobalStyle() {
-
-    return (
-        <style global jsx>{`
-            
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-                list-style: none;
-            }
-
-            body {
-                font-family: 'Open Sans', sans-serif;
-            }
-
-            /* App fit Height */ 
-            html, body, #__next {
-                min-height: 100vh;
-                display: flex;
-                flex: 1;
-            }
-
-            #__next {
-                flex: 1;
-            }
-
-            #__next > * {
-                flex: 1;
-            }
-            /* ./App fit Height */
-
-        `}</style>
-    )
-}
+import React from 'react';
+import { useRouter } from 'next/router';
 
 
-function Title(props) {
+
+function Title({ tag, children }) {
 
     // o || assegura o 'h1' como valor default
-    const Tag = props.tag || 'h1';
+    const Tag = tag || 'h1';
 
     return (
         <>
-            <Tag>{props.children}</Tag>
+            <Tag>{children}</Tag>
             <style jsx>{`
                 ${Tag} {
                     color: ${appConfig.theme.colors.neutrals['000']};
@@ -60,26 +27,16 @@ function Title(props) {
 }
 
 
-// function HomePage() {
-
-//     return (
-//         <div>
-//             <GlobalStyle />
-//             <Title tag="h2">Boas vindas de volta!</Title>
-//             <h2>Discord - Alura Matrix</h2>
-//         </div>
-//     )
-// }
-
-// export default HomePage;
-
-
 export default function PaginaInicial() {
-    const username = 'peas';
+    
+    const [username, setUsername] = React.useState('');
+    //posso deixar 'pedroisb' como valor padrão
+
+    const routing = useRouter();
+
 
     return (
         <>
-            <GlobalStyle />
             <Box
                 styleSheet={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -106,6 +63,15 @@ export default function PaginaInicial() {
                     {/* Formulário */}
                     <Box
                         as="form"
+                        onSubmit={function (eventInfo) {
+                            eventInfo.preventDefault();
+
+                            // window.location.href = '/chat';
+                            // forma "clássica" de criar rota, todavia faz com que a página recarregue seu conteúdo
+
+                            routing.push('/chat');
+                            // navegação na web é como uma pilha, semelhante a um array
+                        }}
                         styleSheet={{
                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                             width: { xs: '100%', sm: '50%' }, textAlign: 'center', marginBottom: '32px',
@@ -116,7 +82,28 @@ export default function PaginaInicial() {
                             {appConfig.name}
                         </Text>
 
+                        {/* 
+                        <input 
+                            type="text" 
+                            value={username}
+                            onChange={function (event) {
+                                console.log("usuário digitou", event.target.value);
+                                // onde está o valor?
+                                const valor = event.target.value;
+                                // setar o valor da variável via React
+                                setUsername(valor);
+                            }}
+                        /> */}
+
                         <TextField
+                            value={username}
+                            onChange={function (event) {
+                                console.log("usuário digitou", event.target.value);
+                                // onde está o valor?
+                                const valor = event.target.value;
+                                // setar o valor da variável via React
+                                setUsername(valor);
+                            }}
                             fullWidth
                             textFieldColors={{
                                 neutral: {
@@ -127,6 +114,7 @@ export default function PaginaInicial() {
                                 },
                             }}
                         />
+
                         <Button
                             type='submit'
                             label='Entrar'
@@ -165,6 +153,7 @@ export default function PaginaInicial() {
                             }}
                             src={`https://github.com/${username}.png`}
                         />
+                        {/* ao acrescentar .png ao final do link do perfil de qualquer pessoa no github, se obtém a foto do perfil */}
                         <Text
                             variant="body4"
                             styleSheet={{
