@@ -1,6 +1,11 @@
 import { Box, Text, TextField, Image, Button } from '@skynexui/components';
 import React from 'react';
 import appConfig from '../config.json';
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzQwNjIwNCwiZXhwIjoxOTU4OTgyMjA0fQ.qKJguqF2mAEWePcKrlAqjDXcLoMKKM1vPtGQOhy7lDY';
+const SUPABASE_URL = 'https://lugyeeobzfcttiaaugwu.supabase.co';
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 
 
@@ -9,26 +14,44 @@ export default function ChatPage() {
     const [message, setMessage] = React.useState('');
     const [messageList, setMessageList] = React.useState([]);
 
+    // o useEffect é um recurso disponibilizado pelo React para tratar os efeitos colaterais do componente, ou seja, tudo aquilo que fuja ao fluxo padrão do componente
+    React.useEffect(() => {
+        supabaseClient
+            .from('messages')
+            .select('*')
+            .then(({ data }) => {
+                console.log('Dados da consuta:', data);
+                setMessageList(data);
+            });
+    }, []);
+
     function handleNewMessage(newMessage) {
 
-
         const message = {
-            id: messageList.length + 1, // +1 para evitar id=0
+            //id: messageList.length + 1, // +1 para evitar id=0
             from: 'vanessametonini',
             // posso substituir por uma variável com o nome de usuário. a ver como seria, pos acredito que ela está aqui como destinatária e não como emitente (no caso, este seria o usuárioq que fez o login)
             text: newMessage
         }
         // lembre-se que cada elemento mensagem não se resume ao texto, em si, mas uma conjunto de informações que também incluem usuário que a enviou, hora de envio etc
 
-        setMessageList([
-            message,
-            ...messageList
-        ]);
+        supabaseClient
+            .from('messages')
+            .insert([
+                message
+            ])
+            .then(({ data }) => {
+                console.log("Criando mensagem: ", messageResponse);
+                setMessageList([
+                    data[0],
+                    ...messageList
+                ]);
+            });
+
         setMessage('');
     }
     // foi necessário por message antes de ...messageList para que a última mensagem a ser exibida na tela fosse a mais recente e não a mais antiga
     // isso se deu em razão do css ter setado o scroll para rolar de forma invertida - de baixo para cima
-
 
     return (
 
@@ -151,7 +174,7 @@ function Header() {
 }
 
 
-function MessageList(props) {
+function MessageList({ messages }) {
 
     return (
 
@@ -168,7 +191,7 @@ function MessageList(props) {
                 marginBottom: '16px',
             }}
         >
-            {props.messages.map((message) => {
+            {messages.map((message) => {
                 return (
                     <Text
                         key={message.id}
@@ -195,7 +218,7 @@ function MessageList(props) {
                                     display: 'inline-block',
                                     marginRight: '8px',
                                 }}
-                                src={`https://github.com/vanessametonini.png`}
+                                src={`https://github.com/${message.from}.png`}
                             //lembre de alterar aqui também no endereço quando substituir o user que está emitindo a mensagem para pegar a foto correta
                             />
                             <Text tag="strong">
