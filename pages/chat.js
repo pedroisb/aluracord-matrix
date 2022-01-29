@@ -19,6 +19,7 @@ export default function ChatPage() {
         supabaseClient
             .from('messages')
             .select('*')
+            .order('id', {ascending: false})
             .then(({ data }) => {
                 console.log('Dados da consuta:', data);
                 setMessageList(data);
@@ -38,6 +39,7 @@ export default function ChatPage() {
         supabaseClient
             .from('messages')
             .insert([
+                // Deve possuir os mesmos campos constantes da base de dados, no caso, do supabase
                 message
             ])
             .then(({ data }) => {
@@ -94,7 +96,6 @@ export default function ChatPage() {
                     }}
                 >
 
-                    {/* messages={[]} */}
                     <MessageList messages={messageList} />
                     {/* {messageList.map((presentMessage) => {
                         return (
