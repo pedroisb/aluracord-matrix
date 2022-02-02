@@ -1,3 +1,4 @@
+
 import appConfig from '../config.json';
 import { Box, Button, Text, TextField, Image } from '@skynexui/components';
 import React from 'react';
@@ -30,8 +31,6 @@ function Title({ tag, children }) {
 export default function PaginaInicial() {
     
     const [username, setUsername] = React.useState('');
-    //posso deixar 'pedroisb' como valor padrão
-
     const routing = useRouter();
 
 
@@ -69,7 +68,7 @@ export default function PaginaInicial() {
                             // window.location.href = '/chat';
                             // forma "clássica" de criar rota, todavia faz com que a página recarregue seu conteúdo
 
-                            routing.push('/chat');
+                            routing.push(`/chat?username=${username}`);
                             // navegação na web é como uma pilha, semelhante a um array
                         }}
                         styleSheet={{

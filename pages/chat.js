@@ -2,15 +2,28 @@ import { Box, Text, TextField, Image, Button } from '@skynexui/components';
 import React from 'react';
 import appConfig from '../config.json';
 import { createClient } from '@supabase/supabase-js';
+import { useRouter } from 'next/router';
+import { ButtonSendSticker } from '../src/components/ButtonSendSticker';
 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzQwNjIwNCwiZXhwIjoxOTU4OTgyMjA0fQ.qKJguqF2mAEWePcKrlAqjDXcLoMKKM1vPtGQOhy7lDY';
 const SUPABASE_URL = 'https://lugyeeobzfcttiaaugwu.supabase.co';
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 
+function listenLiveMessages(addMessage) {
+    return supabaseClient
+        .from('messages')
+        .on('INSERT', (liveResponse) => {
+            addMessage(liveResponse.new);
+        })
+        .subscribe();
+}
+
 
 export default function ChatPage() {
 
+    const routing = useRouter();
+    const loggedUser = routing.query.username; //utilizado o router do next para obter username a partir da url
     const [message, setMessage] = React.useState('');
     const [messageList, setMessageList] = React.useState([]);
 
@@ -19,19 +32,28 @@ export default function ChatPage() {
         supabaseClient
             .from('messages')
             .select('*')
-            .order('id', {ascending: false})
+            .order('id', { ascending: false })
             .then(({ data }) => {
                 console.log('Dados da consuta:', data);
                 setMessageList(data);
             });
+
+        // Aqui foi necessário passar uma função dentro do setMessageList do que simplesmente setar o valor do array. Houve um corner case: caso simplesmente aguardasse a ocorrência de uma nova mensagem, implicou em loop infinito com o handleNewMessage(parte do código inserido aqui pertencia a ele) e caso simplesmente setassse, o useEffect() é chamado apenas uma vez - ou seja, carregaria apenas o valor inicial trazido no useState(), um array vazio
+        listenLiveMessages((newMessage) => {
+            console.log('New message: ', newMessage)
+            setMessageList((listPresentValue) => {
+                return [
+                    newMessage,
+                    ...listPresentValue
+                ];
+            });
+        });
     }, []);
 
     function handleNewMessage(newMessage) {
 
         const message = {
-            //id: messageList.length + 1, // +1 para evitar id=0
-            from: 'vanessametonini',
-            // posso substituir por uma variável com o nome de usuário. a ver como seria, pos acredito que ela está aqui como destinatária e não como emitente (no caso, este seria o usuárioq que fez o login)
+            from: loggedUser,
             text: newMessage
         }
         // lembre-se que cada elemento mensagem não se resume ao texto, em si, mas uma conjunto de informações que também incluem usuário que a enviou, hora de envio etc
@@ -43,11 +65,7 @@ export default function ChatPage() {
                 message
             ])
             .then(({ data }) => {
-                console.log("Criando mensagem: ", messageResponse);
-                setMessageList([
-                    data[0],
-                    ...messageList
-                ]);
+                console.log('Creating message: ', data);
             });
 
         setMessage('');
@@ -148,6 +166,14 @@ export default function ChatPage() {
                                 color: appConfig.theme.colors.neutrals[200],
                             }}
                         />
+                        {/* CallBack */}
+                        <ButtonSendSticker
+                            onStickerClick={(sticker) => {
+                                console.log('Salva esse sticker no banco')
+                                handleNewMessage(':sticker: ' + sticker)
+                            }}
+                        // onStickerClick é um evento criado pelo desenvolvedor do componente
+                        />
                     </Box>
                 </Box>
             </Box>
@@ -236,7 +262,16 @@ function MessageList({ messages }) {
                                 {(new Date().toLocaleDateString())}
                             </Text>
                         </Box>
-                        {message.text}
+                        {message.text.startsWith(':sticker: ')
+                            ? (
+                                <Image src={message.text.replace(':sticker: ', '')} />
+                                // o replace é utilizado para remover ':sticker:' da mensagem; no caso, substituí-lo por uma string vazia
+                            )
+                            : (
+                                message.text
+                            )
+                        }
+                        {/* {message.text} */}
                     </Text>
                 )
             })}
